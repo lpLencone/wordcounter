@@ -1,10 +1,5 @@
 //!< INICIO MAIN_C
 
-/**
- * @author Lucas Plaza     - 2213332131@uezo.edu.br
- * @author Jefferson Dutra - 2213332149@uezo.edu.br
-*/
-
 #include "leitor/leitor.h"
 #include "estruturas/lista/include/fila.h"
 
@@ -58,7 +53,7 @@ int main(int argc, char *argv[])
         printf("  -h, --ajuda           mostrar informações sobre uso do programa\n\n");
         printf("  -i, --insensitivo     fazer leitura insensitiva das palavras\n\n");
         printf("  -o, --ordenar         ordenar as palavras do arquivo (p para palavra ou c para contagem)\n\n");
-        printf("  -p. --pesquisar       pesquisar uma ou mais palavras no arquivo (separadas,por,virgula)\n\n");
+        printf("  -p, --pesquisar       pesquisar uma ou mais palavras no arquivo (separadas,por,virgula)\n\n");
         printf("  -s, --salvar          salvar o resultado em um arquivo\n\n");
         exit(EXIT_FAILURE);
     }
