@@ -78,10 +78,10 @@ int main(int argc, char *argv[])
     if (args.query.flag) {
         void *word_query;
         while ((word_query = queue_peek(&args.query.words)) != NULL) {
-            void *resultado = dictionary_query(&dictionary, word_query, strlen((char *)word_query) + 1);
+            void *result = dictionary_query(&dictionary, word_query, strlen((char *)word_query) + 1);
             __print_word(word_query);
-            if (resultado != NULL) {
-                __print_count(resultado);
+            if (result != NULL) {
+                __print_count(result);
             }
             else {
                 fprintf(args.output, "not found in the file\n");
