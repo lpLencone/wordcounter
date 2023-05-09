@@ -15,3 +15,5 @@ Use option `-w` to write, and pass in the path to the file where to save
   
 If options `-s` and `-q` are used, the order of the words specified takes precedence, meaning it won't matter if you passed -s as flag
 
+## Note
+For this program a word is any string of letters only. Numbers, underscore, etc. are not considered as part of words. If, then, there's the word 'e-mail' in a file, the program will consider 'e' to be a word as well as 'mail'.
