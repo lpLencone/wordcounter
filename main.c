@@ -1,7 +1,5 @@
-//!< INICIO MAIN_C
-
-#include "leitor/leitor.h"
-#include "estruturas/lista/include/fila.h"
+#include "reader/reader.h"
+#include "dstructs/list/include/queue.h"
 
 #include <ctype.h>
 #include <errno.h>
@@ -10,167 +8,159 @@
 #include <stdlib.h>
 #include <string.h>
 
-void __print_palavra(void *palavra);
-void __print_contagem(void *contagem);
-void __zerar_palavra(char *palavra, int tamanho);
+void __print_word(void *word);
+void __print_count(void *count);
+void __reset_word(char *word, int n);
 
-// Argumentos do programa
 struct {
-    int ajuda;
-    int ordenar;
-    int insensitivo;
-    int imprimir;
+    int help;
+    int sort;
+    int insensitive;
+    int print;
 
-    FILE *arquivo;
-
-    struct {
-        int flag;
-        FILE *arquivo;
-    } salvar;
+    FILE *file;
 
     struct {
         int flag;
-        struct fila palavras;
-    } pesquisar;
+        FILE *file;
+    } save;
+
+    struct {
+        int flag;
+        struct queue words;
+    } query;
 
     FILE *output;
 }
-argumentos;
+args;
 
-void inicializar_argumentos();
-// Ler argumentos do terminal
-void argumentos_terminal(int argc, char *argv[]);
+void inicializar_args();
+void args_terminal(int argc, char *argv[]);
 
 int main(int argc, char *argv[])
 {
-    inicializar_argumentos();
+    inicializar_args();
 
-    argumentos_terminal(argc, argv);
+    args_terminal(argc, argv);
 
-    if (argumentos.ajuda) {
-        printf("Modo de uso: %s [-a arquivo] [-hi] [-o modo] [-p palavras] [-s arquivo]\n", argv[0]);
-        printf("  -a, --arquivo         fornecer caminho do arquivo para ser lido (padrao: stdin)\n\n");
-        printf("  -h, --ajuda           mostrar informações sobre uso do programa\n\n");
-        printf("  -i, --insensitivo     fazer leitura insensitiva das palavras\n\n");
-        printf("  -o, --ordenar         ordenar as palavras do arquivo (p para palavra ou c para contagem)\n\n");
-        printf("  -p, --pesquisar       pesquisar uma ou mais palavras no arquivo (separadas,por,virgula)\n\n");
-        printf("  -s, --salvar          salvar o resultado em um arquivo\n\n");
+    if (args.help) {
+        printf("Modo de uso: %s [-a file] [-hi] [-o modo] [-p words] [-s file]\n", argv[0]);
+        printf("  -f, --file            file path (default: stdin)\n");
+        printf("  -h, --help            this menu\n");
+        printf("  -i, --insensitive     insensitive reading of the words\n");
+        printf("  -s, --sort            -sw sort by word, -sf sort by frequency\n");
+        printf("  -q, --query           query one or more words (separated,by,comma)\n");
+        printf("  -w, --write           write result to a file\n");
         exit(EXIT_FAILURE);
     }
 
-    struct dicionario dicionario = dicionario_iniciar(__print_palavra, __print_contagem);
+    struct dictionary dictionary = dictionary_init(__print_word, __print_count);
 
-    if (argumentos.arquivo == stdin) {
-        printf("Lendo diretamente do terminal...\nEntre Ctrl+D para enviar texto fornecido.\n\n");
+    if (args.file == stdin) {
+        printf("Reading from the terminal...\nEnter Ctrl+D to stop\n\n");
     }
-    contar_palavras(argumentos.arquivo, &dicionario, argumentos.insensitivo); // Popular dicionário com as palavras no arquivo
-    fclose(argumentos.arquivo); 
+    count_words(args.file, &dictionary, args.insensitive); 
+    fclose(args.file); 
 
-    if (argumentos.ordenar != -1) {
-        dicionario_quicksort(&dicionario, argumentos.ordenar);
-    }
-
-    if (argumentos.salvar.flag) {
-        // Redireciona output para o arquivo de salvamento
-        argumentos.output = argumentos.salvar.arquivo;
+    if (args.sort != -1) {
+        dictionary_quicksort(&dictionary, args.sort);
     }
 
-    if (argumentos.imprimir) {
-        // Imprime todo o resultado da leitura caso o usuário não especifique palavras para pesquisar
+    if (args.save.flag) {
+        args.output = args.save.file;
+    }
+
+    if (args.print) {
         printf("\n");
-        dicionario_print(&dicionario);
+        dictionary_print(&dictionary);
     }
 
-    if (argumentos.pesquisar.flag) {
-        void *palavra_pesquisa;
-        // Enquanto houver palavras para pesquisar
-        while ((palavra_pesquisa = fila_espiar(&argumentos.pesquisar.palavras)) != NULL) {
-            // Obter contagem da palavra
-            void *resultado = dicionario_pesquisar(&dicionario, palavra_pesquisa, strlen((char *)palavra_pesquisa) + 1);
-            __print_palavra(palavra_pesquisa);
-            // Se a palavra existir, apresente-a com a sua contagem
+    if (args.query.flag) {
+        void *word_query;
+        while ((word_query = queue_peek(&args.query.words)) != NULL) {
+            void *resultado = dictionary_query(&dictionary, word_query, strlen((char *)word_query) + 1);
+            __print_word(word_query);
             if (resultado != NULL) {
-                __print_contagem(resultado);
+                __print_count(resultado);
             }
-            // Senao...
             else {
-                fprintf(argumentos.output, "nao existe no arquivo\n");
+                fprintf(args.output, "not found in the file\n");
             }
-            fila_retirar(&argumentos.pesquisar.palavras);
+            queue_pop(&args.query.words);
         }
     }
 
-    fila_destruir(&argumentos.pesquisar.palavras);
-    dicionario_destruir(&dicionario);
-    if (argumentos.salvar.flag) {
-        fclose(argumentos.salvar.arquivo);
+    queue_destroy(&args.query.words);
+    dictionary_destroy(&dictionary);
+    if (args.save.flag) {
+        fclose(args.save.file);
     }
 
     return 0;
 }
 
-void __obter_palavras_pesquisa(char *optarg);
+void __get_words_query(char *optarg);
 
-void argumentos_terminal(int argc, char *argv[])
+void args_terminal(int argc, char *argv[])
 {
-    struct option opcoes[] = {
-        {"ajuda",       no_argument,       NULL, 'h'},
-        {"insensitivo", no_argument,       NULL, 'i'},
-        {"arquivo",     required_argument, NULL, 'a'},
-        {"ordenar",     required_argument, NULL, 'o'},
-        {"salvar",      required_argument, NULL, 's'},
-        {"pesquisar",   required_argument, NULL, 'p'},
-        {NULL, 0, NULL, '\0'},
+    struct option options[] = {
+        {"help",        no_argument,        NULL,   'h' },
+        {"insensitive", no_argument,        NULL,   'i' },
+        {"file",        required_argument,  NULL,   'f' },
+        {"sort",        required_argument,  NULL,   's' },
+        {"write",       required_argument,  NULL,   'w' },
+        {"query",       required_argument,  NULL,   'q' },
+        {NULL,          0,                  NULL,   '\0'},
     };
 
     char opt;
-    int opcoes_indice = 0;
-    while ((opt = getopt_long(argc, argv, "ha:o:s:p:i", opcoes, &opcoes_indice)) != -1) {
+    int options_index = 0;
+    while ((opt = getopt_long(argc, argv, "hf:s:w:q:i", options, &options_index)) != -1) {
         switch (opt)
         {
-        case 'a':
-            argumentos.arquivo = fopen(optarg, "r");
-            if (argumentos.arquivo == NULL) {
+        case 'f':
+            args.file = fopen(optarg, "r");
+            if (args.file == NULL) {
                 fprintf(stderr, "%s::%d: fopen: %s\n", __FILE__, __LINE__ - 2, strerror(errno));
                 exit(errno);
             }
             break;
 
-        case 's':
-            argumentos.salvar.arquivo = fopen(optarg, "w");
-            if (argumentos.salvar.arquivo == NULL) {
+        case 'w':
+            args.save.file = fopen(optarg, "w");
+            if (args.save.file == NULL) {
                 fprintf(stderr, "%s::%d: fopen: %s\n", __FILE__, __LINE__ - 2, strerror(errno));
                 exit(errno);
             }
-            argumentos.salvar.flag = 1;
+            args.save.flag = 1;
             break;
 
         case 'h':
-            argumentos.ajuda = 1;
+            args.help = 1;
             break;
 
-        case 'o':
+        case 's':
             switch (tolower(optarg[0])) {
-            case 'p':
-                argumentos.ordenar = CHAVE;
+            case 'w':
+                args.sort = KEY;
                 break;
-            case 'c':
-                argumentos.ordenar = VALOR;
+            case 'f':
+                args.sort = VALUE;
                 break;
             default:
-                printf("Opcao de ordenacao nao reconhecida: %s\n\n", optarg);
+                printf("Unknown sort mode: %s; use w (word) or f (frequency) instead\n\n", optarg);
                 break;
             }
             break;
 
         case 'i':
-            argumentos.insensitivo = 1;
+            args.insensitive = 1;
             break;
             
-        case 'p':
-            __obter_palavras_pesquisa(optarg);
-            argumentos.pesquisar.flag = 1;
-            argumentos.imprimir = 0;
+        case 'q':
+            __get_words_query(optarg);
+            args.query.flag = 1;
+            args.print = 0;
             break;
 
         default:
@@ -179,62 +169,58 @@ void argumentos_terminal(int argc, char *argv[])
     }
 }
 
-void inicializar_argumentos()
+void inicializar_args()
 {
-    argumentos.ajuda = 0;
-    argumentos.ordenar = -1;
-    argumentos.imprimir = 1;
-    argumentos.insensitivo = 0;
+    args.help = 0;
+    args.sort = -1;
+    args.print = 1;
+    args.insensitive = 0;
 
-    argumentos.arquivo = stdin;
+    args.file = stdin;
 
-    argumentos.salvar.flag = 0;
-    argumentos.salvar.arquivo = NULL;
+    args.save.flag = 0;
+    args.save.file = NULL;
 
-    argumentos.pesquisar.flag = 0;
-    argumentos.pesquisar.palavras = fila_iniciar(NULL);
+    args.query.flag = 0;
+    args.query.words = queue_init(NULL);
 
-    argumentos.output = stdout;
+    args.output = stdout;
 }
 
-void __obter_palavras_pesquisa(char *optarg)
+void __get_words_query(char *optarg)
 {
     int cursor = 0;
-    char palavra[32] = {0};
+    char word[32] = {0};
     int i = 0;
     do {
         if (isalpha(optarg[i])) {
-            palavra[cursor] = optarg[i];
+            word[cursor] = optarg[i];
             cursor++;
         }
         else if (cursor != 0) {
-            // Terminar palavra
-            palavra[cursor] = '\0';
-            // Adicioná-la à fila
-            fila_enfileirar(&argumentos.pesquisar.palavras, (void *)palavra, strlen(palavra) + 1);
-            // Zerar palavra até o cursor
-            __zerar_palavra(palavra, cursor);
+            word[cursor] = '\0';
+            queue_push(&args.query.words, (void *)word, strlen(word) + 1);
+            __reset_word(word, cursor);
             cursor = 0;
         }
     }
     while (optarg[i++] != '\0');
 }
 
-void __zerar_palavra(char *palavra, int tamanho)
+void __reset_word(char *word, int n)
 {
-    for (int i = 0; i < tamanho; i++) {
-        palavra[i] = '\0';
+    for (int i = 0; i < n; i++) {
+        word[i] = '\0';
     }
 }
 
-void __print_palavra(void *palavra)
+void __print_word(void *word)
 {
-    fprintf(argumentos.output, "%-12s ", (char *)palavra);
+    fprintf(args.output, "%-14s ", (char *)word);
 }
 
-void __print_contagem(void *contagem)
+void __print_count(void *count)
 {
-    fprintf(argumentos.output, "%d\n", *(int *)contagem);
+    fprintf(args.output, "%d\n", *(int *)count);
 }
 
-//!< FINAL MAIN_C
