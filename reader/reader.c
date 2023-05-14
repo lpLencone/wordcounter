@@ -51,7 +51,6 @@ void __update_word(struct dictionary *dictionary, char word[])
         (*(int *)value)++;
         dictionary_alter(dictionary, word, strlen(word) + 1, value, sizeof(int));
     }
-    // Se nao estiver, adiciona-a
     else {
         dictionary_add(dictionary, word, strlen(word) + 1, (void *)&INITIAL_VALUE, sizeof(int));
     }

@@ -45,12 +45,12 @@ int main(int argc, char *argv[])
 
     if (args.help) {
         printf("Modo de uso: %s [-a file] [-hi] [-o modo] [-p words] [-s file]\n", argv[0]);
-        printf("  -f, --file            file path (default: stdin)\n");
-        printf("  -h, --help            this menu\n");
-        printf("  -i, --insensitive     insensitive reading of the words\n");
-        printf("  -s, --sort            -sw sort by word, -sf sort by frequency\n");
-        printf("  -q, --query           query one or more words (separated,by,comma)\n");
-        printf("  -w, --write           write result to a file\n");
+        printf("  -f, --file			file path (default: stdin)\n");
+        printf("  -h, --help			this menu\n");
+        printf("  -i, --insensitive		insensitive reading of the words\n");
+        printf("  -s, --sort			-sw sort by word, -sf sort by frequency\n");
+        printf("  -q, --query			query one or more words (separated,by,comma)\n");
+        printf("  -w, --write			write result to a file\n");
         exit(EXIT_FAILURE);
     }
 
