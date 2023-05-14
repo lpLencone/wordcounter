@@ -34,12 +34,12 @@ struct {
 }
 args;
 
-void inicializar_args();
+void init_args();
 void args_terminal(int argc, char *argv[]);
 
 int main(int argc, char *argv[])
 {
-    inicializar_args();
+    init_args();
 
     args_terminal(argc, argv);
 
@@ -169,7 +169,7 @@ void args_terminal(int argc, char *argv[])
     }
 }
 
-void inicializar_args()
+void init_args()
 {
     args.help = 0;
     args.sort = -1;
