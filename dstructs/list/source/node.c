@@ -4,15 +4,14 @@
 #include <string.h>
 
 struct node * 
-node_init(void *data, size_t bytes, void (*free)(void *data))
+node_init(void *data, size_t bytes, void (*free_fn)(void *data))
 {
     struct node *node = (struct node *)malloc(sizeof(struct node));
     node->prev = NULL;
     node->next = NULL;
     node->data = malloc(bytes);
     memcpy(node->data, data, bytes);
-    node->free = free;
-	free(data);
+    node->free = free_fn;
     return node;
 }
 
